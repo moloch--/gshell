@@ -21,13 +21,24 @@ func randomID(n int) string {
 	return hex.EncodeToString(bytes)
 }
 
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 func main() {
 	log.Printf("extracting assets ...")
 	assetsBox := packr.NewBox("./assets")
 	gshellDir := setup(assetsBox)
 	defer func() {
 		log.Printf("cleaning up assets in: %s", gshellDir)
-		// os.RemoveAll(gshellDir)
+		os.RemoveAll(gshellDir)
 	}()
 
 	log.Printf("extracted assets to: %s", gshellDir)
@@ -55,15 +66,4 @@ func main() {
 	cwd, _ := os.Getwd()
 	output, _ = gobuild(goroot, shellDir, fmt.Sprintf("%s/implant.exe", cwd))
 	log.Printf(" --- build:\n%s\n", string(output))
-}
-
-func exists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
 }
