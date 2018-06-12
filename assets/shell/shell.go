@@ -16,7 +16,7 @@ const (
 )
 
 var (
-	c2Servers = [...]string{"127.0.0.1:1337"}
+	c2Servers = [...]string{"__c2__"}
 )
 
 func exists(path string) bool {

