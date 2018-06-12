@@ -13,21 +13,18 @@ import (
 	"github.com/gobuffalo/packr"
 )
 
-const (
-	GOOS = runtime.GOOS
-)
+func setup() string {
 
-func setup(assetsBox packr.Box) string {
+	assetsBox := packr.NewBox("./assets")
 
 	gshellDir, err := ioutil.TempDir("", "gshell")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	goZipBoxPath := fmt.Sprintf("%s/go.zip", GOOS)
-	goZip, err := assetsBox.MustBytes(goZipBoxPath)
+	goZip, err := assetsBox.MustBytes(fmt.Sprintf("%s/go.zip", runtime.GOOS))
 	if err != nil {
-		log.Fatalf("static asset not found: %s", goZipBoxPath)
+		log.Fatalf("static asset not found: go.zip")
 	}
 
 	goZipPath := fmt.Sprintf("%s/go.zip", gshellDir)
@@ -35,6 +32,17 @@ func setup(assetsBox packr.Box) string {
 	_, err = unzip(goZipPath, gshellDir)
 	if err != nil {
 		log.Fatalf("Failed to unzip file %s -> %s", goZipPath, gshellDir)
+	}
+
+	goSrcZip, err := assetsBox.MustBytes("src.zip")
+	if err != nil {
+		log.Fatalf("static asset not found: src.zip")
+	}
+	goSrcZipPath := fmt.Sprintf("%s/src.zip", gshellDir)
+	ioutil.WriteFile(goSrcZipPath, goSrcZip, 0644)
+	_, err = unzip(goSrcZipPath, fmt.Sprintf("%s/go", gshellDir))
+	if err != nil {
+		log.Fatalf("Failed to unzip file %s -> %s/go", goSrcZipPath, gshellDir)
 	}
 
 	return gshellDir

@@ -22,11 +22,10 @@ func main() {
 	flag.Parse()
 
 	log.Printf("extracting assets ...")
-	assetsBox := packr.NewBox("./assets")
-	gshellDir := setup(assetsBox)
+	gshellDir := setup()
 	defer func() {
 		log.Printf("cleaning up assets in: %s", gshellDir)
-		os.RemoveAll(gshellDir)
+		// os.RemoveAll(gshellDir)
 	}()
 	log.Printf("extracted assets to: %s", gshellDir)
 
@@ -42,10 +41,13 @@ func generateImplant(gshellDir string, config GoConfig) {
 
 	shellID := randomID(8)
 	log.Printf("creating shell with ID: %s", shellID)
-	assetsBox := packr.NewBox("./assets")
-	shellGo, _ := assetsBox.MustString("shell/shell.go")
+	shellBox := packr.NewBox("./assets/shell")
+	shellGo, err := shellBox.MustString("shell.go")
+	if err != nil {
+		panic(err)
+	}
 	shellDir := fmt.Sprintf("%s/shells/%s", gshellDir, shellID)
-	err := os.MkdirAll(shellDir, os.ModePerm)
+	err = os.MkdirAll(shellDir, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
@@ -53,7 +55,7 @@ func generateImplant(gshellDir string, config GoConfig) {
 	log.Printf("shell dir: %s", shellDir)
 	ioutil.WriteFile(fmt.Sprintf("%s/shell.go", shellDir), []byte(shellGo), 0600)
 	for _, platform := range supportedPlatforms {
-		shellPlatform, _ := assetsBox.MustBytes(fmt.Sprintf("shell/shell_%s.go", platform))
+		shellPlatform, _ := shellBox.MustBytes(fmt.Sprintf("shell_%s.go", platform))
 		ioutil.WriteFile(fmt.Sprintf("%s/shell_%s.go", shellDir, platform), shellPlatform, 0600)
 	}
 
