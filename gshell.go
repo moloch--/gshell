@@ -24,16 +24,16 @@ var (
 func main() {
 	osPtr := flag.String("os", "", "target operating system")
 	archPtr := flag.String("arch", "amd64", "target cpu architecture")
-	c2 := flag.String("c2", "127.0.0.1:1337", "c2 server")
-	output := flag.String("output", "implant.exe", "output file")
+	c2Ptr := flag.String("c2", "127.0.0.1:1337", "c2 server")
+	outputPtr := flag.String("output", "implant.exe", "output file")
+	noCleanPtr := flag.Bool("no-clean", false, "do not cleanup tmp files")
 	flag.Parse()
 
 	log.Printf("extracting assets ...")
 	gshellDir := setup()
 	defer func() {
-		log.Printf("cleaning up assets in: %s", gshellDir)
-		noCleanPtr := flag.Bool("no-clean", false, "do not cleanup tmp files")
 		if !(*noCleanPtr) {
+			log.Printf("cleaning up assets in: %s", gshellDir)
 			os.RemoveAll(gshellDir)
 		}
 	}()
@@ -44,7 +44,7 @@ func main() {
 		GOARCH: *archPtr,
 		GOROOT: fmt.Sprintf("%s/go", gshellDir),
 	}
-	generateImplant(gshellDir, *c2, *output, config)
+	generateImplant(gshellDir, *c2Ptr, *outputPtr, config)
 }
 
 func generateImplant(gshellDir string, c2 string, output string, config GoConfig) {
